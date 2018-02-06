@@ -22,7 +22,7 @@ from multiprocessing import Pool
 import datetime
 import argparse
 
-BASE_DIR = os.getcwd
+BASE_DIR = os.getcwd()
 
 # ZONES is golbal variable. It will only work when the model has the same number of zones with the same names.
 ZONES = ['1', '2', '3', 'SALA']
@@ -196,7 +196,7 @@ def process_folder(folder):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process output data from Energyplus.')
-    parser.add_argument('-t',                        
+    parser.add_argument('-t',
                         action='store',
                         type=int,
                         help='runs T threads')

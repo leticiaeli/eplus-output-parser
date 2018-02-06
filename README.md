@@ -7,7 +7,7 @@ Python script developed to process output data from Energyplus application.
 ## Usage:
 
 ```
-usage: python main.py [-h] [-t]
+usage: python main.py [-h] [-t T]
 
 Process output data from Energyplus.
 

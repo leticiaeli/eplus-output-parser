@@ -22,11 +22,12 @@ from multiprocessing import Pool
 import datetime
 import argparse
 
-BASE_DIR = os.getcwd()
+BASE_DIR = os.getcwd
 
 # ZONES is golbal variable. It will only work when the model has the same number of zones with the same names.
 ZONES = ['1', '2', '3', 'SALA']
 
+MAX_THREADS = 8
 
 def filter_idf_files(files):
     #Filters the files in the folder to take only .idf files
@@ -195,43 +196,34 @@ def process_folder(folder):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process output data from Energyplus.')
-    parser.add_argument('-t',
-                        action='store_false',
-                        help='run a thread pool equal to the number of eligible folders')
+    parser.add_argument('-t',                        
+                        action='store',
+                        type=int,
+                        help='runs T threads')
+
     args = parser.parse_args()
-    threaded = args.t
 
     folders = glob.glob('_*')
 
-    print('Processing {} folders in \'{}\':'.format(len(folders), BASE_DIR))
-
+    print('Processing {} folder(s) in \'{}\':'.format(len(folders), BASE_DIR))
     for folder in folders:
         print('\t{}'.format(folder))
 
     start_time = datetime.datetime.now()
 
-    if threaded:
-
-        if len(folders) > 8:
-            num_threads = 8
-            print('Multi thread process... \n','Number of threads: 8')
-
-        else:            
-
-            num_threads = len(folders)
-            print('Multi thread process... \n','Number of threads: ',num_threads)
-
-        num_threads = len(folders)
-        p = Pool(num_threads)
+    if args.t:
+        p = Pool(args.t)
+        p.map(process_folder, folders)
+    else:
+        num_folders = len(folders)
+        p = Pool(min(num_folders, MAX_THREADS))
         p.map(process_folder, folders)
 
-    else:
-
-        print('Single thread process...')
-        for folder in folders:
-            process_folder(folder)
 
     end_time = datetime.datetime.now()
 
     total_time = (end_time - start_time)
-print("Total time: " + str(total_time))
+    
+    print("Total processing time: " + str(total_time))
+  
+  

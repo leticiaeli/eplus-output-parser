@@ -15,6 +15,7 @@ import argparse
 
 BASE_DIR = os.getcwd()
 ZONAS = ['1', '2', '3', 'SALA']
+MAX_THREADS = 8
 
 
 def filter_idf_files(files):
@@ -169,29 +170,29 @@ def processar_pasta(pasta):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process output data from Energyplus.')
     parser.add_argument('-t',
-                        action='store_true',
-                        help='run a thread pool equal to the number of eligible folders')
+                        action='store',
+                        type=int,
+                        help='runs T threads')
     args = parser.parse_args()
-    threaded = args.t
 
     # pastas = ['BeloHorizonte', 'FozdoIguacu', 'Goiania', 'Niteroi', 'RiodeJaneiro']
     pastas = glob.glob('_*')
 
-    print('Processing {} folders in \'{}\':'.format(len(pastas), BASE_DIR))
+    print('Processing {} folder(s) in \'{}\':'.format(len(pastas), BASE_DIR))
     for pasta in pastas:
         print('\t{}'.format(pasta))
 
     start_time = datetime.datetime.now()
 
-    if threaded:
-        num_pastas = len(pastas)
-        p = Pool(num_pastas)
+    if args.t:
+        p = Pool(args.t)
         p.map(processar_pasta, pastas)
     else:
-        for pasta in pastas:
-            processar_pasta(pasta)
+        num_pastas = len(pastas)
+        p = Pool(min(num_pastas, MAX_THREADS))
+        p.map(processar_pasta, pastas)
 
     end_time = datetime.datetime.now()
 
     total_time = (end_time - start_time)
-    print("O tempo total foi de: " + str(total_time))
+    print("Total processing time: " + str(total_time))

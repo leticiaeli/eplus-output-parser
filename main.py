@@ -14,23 +14,24 @@ It takes from the output variables file, for each zone:
 *Programa criado para resumir os output variables do EnergyPlus em uma linha de data frame.
 """
 
-import os
-import pandas as pd
+import argparse
 import csv
+import datetime
 import glob
 from multiprocessing import Pool
-import datetime
-import argparse
+import os
+import pandas as pd
 
 BASE_DIR = os.getcwd()
 
-# ZONES is golbal variable. It will only work when the model has the same number of zones with the same names.
+# ZONES is global variable. It will only work when the model has the same number of zones with the same names.
 ZONES = ['1', '2', '3', 'SALA']
 
 MAX_THREADS = 8
 
+
 def filter_idf_files(files):
-    #Filters the files in the folder to take only .idf files
+    """Filters the files in the folder to take only .idf files"""
 
     idf_files = []
 
@@ -42,7 +43,7 @@ def filter_idf_files(files):
 
 
 def inputs_comfort(file, zone):
-    #It counts the numeber of timesteps, and divides the Operative Temperature in bands 
+    """It counts the numeber of timesteps, and divides the Operative Temperature in bands"""
     
     less16 = 0
     from16to18 = 0
@@ -119,26 +120,27 @@ def inputs_comfort(file, zone):
 
 
 def process_folder(folder):
-    #Takes the output variables file, and resumes the data into a dict.
+    """Takes the output variables file, and resumes the data into a dict."""
 
     os.chdir(BASE_DIR+'/'+folder)
     files = os.listdir(os.getcwd())
     files.sort()
     idf_files = filter_idf_files(files)
 
-    data = {}
-    data['folder'] = []
-    data['file'] = []
-    data['zone'] = []
-    data['heating'] = []
-    data['cooling'] = []
-    data['less16'] = []
-    data['from16to18'] = []
-    data['from18to23'] = []
-    data['from23to26'] = []
-    data['more26'] = []
-    data['timesteps'] = []
-    data['HVAC free hours'] = []
+    data = {
+        'folder': [],
+        'file': [],
+        'zone': [],
+        'heating': [],
+        'cooling': [],
+        'less16': [],
+        'from16to18': [],
+        'from18to23': [],
+        'from23to26': [],
+        'more26': [],
+        'timesteps': [],
+        'HVAC free hours': [],
+    }
 
     for file in idf_files:
         
@@ -219,11 +221,8 @@ if __name__ == '__main__':
         p = Pool(min(num_folders, MAX_THREADS))
         p.map(process_folder, folders)
 
-
     end_time = datetime.datetime.now()
 
     total_time = (end_time - start_time)
     
     print("Total processing time: " + str(total_time))
-  
-  

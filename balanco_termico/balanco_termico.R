@@ -1,11 +1,109 @@
-library("data.table")
-
-## CHAMANDO O ARQUIVO ----
+# library("data.table")
 
 setwd("/home/marcelo/Downloads/")
 
+## FUNCOES ----
+
+sumcols = function(df, col_list, output_type){
+  first = TRUE
+  for(c in col_list){
+    if(first == TRUE){
+      main_col = df[,grepl(paste0(c,output_type),colnames(df))]
+      first = FALSE
+    }else{
+      main_col = main_col + df[,grepl(paste0(c,output_type),colnames(df))]
+    }
+  }
+  return(main_col)
+}
+
+df.balanco <- function(df, zt, internal_walls, external_walls, floor, roof, windows, doors){
+  
+  df_balanco = data.frame(
+    mes = as.numeric(substr(df$Date.Time, 2,3)),
+    dia = as.numeric(substr(df$Date.Time, 5,6)),
+    internal_gains = df[,grepl(paste0(zt,'.Zone.Total.Internal.Convective.Heating.Energy..J..'),colnames(df))], 
+    windows = -sumcols(df, windows, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'),
+    internal_walls = -sumcols(df, internal_walls, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'),
+    external_walls = -sumcols(df, external_walls, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'),
+    doors = -sumcols(df, doors, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'), 
+    floor = -sumcols(df, floor, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'),
+    roof = -sumcols(df, roof, '.Surface.Inside.Face.Convection.Heat.Gain.Energy..J..'),
+    cooling = -df[,grepl(paste0(zt,'.Zone.Air.System.Sensible.Cooling.Energy..J..'),colnames(df))],
+    heating = df[,grepl(paste0(zt,'.Zone.Air.System.Sensible.Heating.Energy..J..'),colnames(df))]
+  )
+  
+  if(any(grepl('Infiltration',colnames(df)))){
+    df_balanco$vn_loss = -df[,grepl(paste0(zt,'.AFN.Zone.Infiltration.Sensible.Heat.Loss.Energy..J..'),colnames(df))]
+    df_balanco$vn_gain = df[,grepl(paste0(zt,'.AFN.Zone.Infiltration.Sensible.Heat.Gain.Energy..J..'),colnames(df))]
+  }
+  
+  return(df_balanco)
+}
+
+day.to.plot = function(df, day){  # insert c([month], [day])
+  
+  df$mes = as.numeric(substr(df$Date.Time, 2,3))
+  df$dia = as.numeric(substr(df$Date.Time, 5,6))
+  timesteps_x_day = nrow(df)/365
+  
+  if(day == 'max'){
+    plot_day <- which.max(df[,grepl('Environment.Site.Outdoor.Air.Drybulb.Temperature',colnames(df))])
+  }
+  else{
+    if(day == 'min'){
+      plot_day <- which.min(df[,grepl('Environment.Site.Outdoor.Air.Drybulb.Temperature',colnames(df))])
+    }
+    else{
+      plot_day = which(df$dia == day[2] & df$mes == day[1])[1]+timesteps_x_day/2
+    }
+  }
+  
+  df_to_plot = df[(plot_day-timesteps_x_day):(plot_day+timesteps_x_day), ]
+  return (df_to_plot)
+}
+
+## LISTANDO O ARQUIVOS  ----
+
 file_list = list.files(pattern="*.csv")
 file_list = file_list[!grepl('Table|table', file_list)]  # todos os csv menos o table
+print(file_list)
+
+## TESTANDO AS FUNCOES  ----
+
+dfplot = day.to.plot(df_balanco, c(4,20))
+
+df_balanco = df.balanco(df, zt, internal_walls, external_walls, floor, roof, windows, doors)
+
+sum(df_balanco)
+
+soma = apply(df_balanco, 2, sum)
+sum(soma)
+
+df = read.csv("construction_01_comp_02_ocup_01.csv")
+# df = read.csv("construction_01_comp_02_ocup_01 (1).csv")
+# df = read.csv("HVAC_setpoint23.csv")
+# df = read.csv("HVACeVN_setpoint23.csv")
+# df = read.csv("eplusout.csv")
+colnames(df)
+zt = 'DORM1'
+internal_walls = c('PARINT1_DORM1SALA','PARINT2_DORM1DORM2')
+external_walls = c('PAREXT_LESTE_DORM1','PAREXT_SUL_DORM1')
+floor = c('PISO_QUARTO1')
+roof = c('FORRO_DORM1ATICO')
+windows = c('JANQUARTO1_SUL')
+doors = c('PORTAINT_DORM1SALA')
+
+df_balanco = df.balanco(df, zt, internal_walls, external_walls, floor, roof, windows, doors)
+sum(df_balanco)
+
+soma = apply(df_balanco, 2, sum)
+soma
+sum(soma)
+sum(soma)/min(abs(soma))
+
+###### COISAS PRA DEPOIS ####
+
 
 
 balanco <- function(eplus_output){

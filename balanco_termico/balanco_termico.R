@@ -1,4 +1,3 @@
-# library("data.table")
 library(ggplot2)
 
 setwd("/home/marcelo/Downloads/")
@@ -20,11 +19,19 @@ sumcols = function(df, col_list, output_type){
 
 df.balanco <- function(df, zt, internal_walls, external_walls, floor, roof, windows, doors, energy_unit='kJ'){
   
-  if(unit == 'kJ'){
-    divisor = 1000
+  if(energy_unit == 'J'){
+    divisor = 1
   }else{
-    if(unit == 'Wh'){
-      divisor = 3600
+    if(energy_unit == 'kJ'){
+      divisor = 1000
+    }else{
+      if(energy_unit == 'Wh'){
+        divisor = 3600
+      }else{
+        if(energy_unit == 'kWh'){
+          divisor = 3600000
+        }
+      }
     }
   }
   
@@ -58,6 +65,7 @@ day.to.plot = function(df, day){  # insert c([month], [day])
   
   df$mes = as.numeric(substr(df$Date.Time, 2,3))
   df$dia = as.numeric(substr(df$Date.Time, 5,6))
+  # df$hora = as.POSIXct(strptime(df$Date.Time," %m/%d  %H:%M:%S"))
   timesteps_x_day = nrow(df)/365
   
   if(day == 'max'){
@@ -122,7 +130,7 @@ plot.period = function(df, file_name, width = 32, height = 18, units = "cm", dpi
   dfplot = data.frame('ganho_perda'=colnames(df)[4:length(colnames(df))], 'valor_kwh' = apply(df_balanco[,4:length(colnames(df_balanco))], 2, sum))
   plot = ggplot(dfplot, aes(x=ganho_perda, y=valor_kwh, fill=ganho_perda)) +
     geom_bar(stat="identity")+
-    labs(title='Balanço anual', x="Ganhos e Perdas", y=paste0('Ganhos e Perdas no Ar da Zona (',energy_unit,')'))+
+    labs(x="Ganhos e Perdas", y=paste0('Ganhos e Perdas no Ar da Zona (',energy_unit,')'))+
     theme(legend.title = element_blank(),
           axis.text.x = element_blank(),
           axis.title.y = element_text(size=12, vjust = 2),
@@ -132,10 +140,13 @@ plot.period = function(df, file_name, width = 32, height = 18, units = "cm", dpi
     )#+
     # scale_fill_manual(values=c("#FFFF99","#B2DF8A","#33A02C","#FB9A99","#E31A1C","#FDBF6F","#FF7F00","#CAB2D6","#6A3D9A"))#+  # esse eh o Paired
     # ylim(-1500,1500)
+  if(title){
+    plot = plot +
+      ggtitle('Balanço Térmico Anual')
+  }
   show(plot)
   ggsave(paste0(file_name,'.png'),plot=plot, width=width, height=height, units=units, dpi=dpi)
 }
-plot.period(df_balanco, 'plot_teste')
 
 ## LISTANDO O ARQUIVOS  ----
 
@@ -162,42 +173,21 @@ windows = c('JANQUARTO1_SUL')
 doors = c('PORTAINT_DORM1SALA')
 
 df_balanco = df.balanco(df, zt, internal_walls, external_walls, floor, roof, windows, doors)
-sum(df_balanco)
 
-soma = apply(df_balanco, 2, sum)
-soma
-sum(soma)
-sum(soma)/min(abs(soma))
-
-dfplot = day.to.plot(df, 'max')  # c(4,20))
+dfplot = day.to.plot(df, c(4,20))  # 'min')  # 
 dfplot = df.balanco(dfplot, zt, internal_walls, external_walls, floor, roof, windows, doors)
-plot.day(dfplot, 'plot_teste')
+plot.day(dfplot, '~/Desktop/plot_teste_min')
 
-# GRAFICOS ----
+dfplot = day.to.plot(df, c(4,20))  # 'min')  # 
+dfplot = df.balanco(dfplot, zt, internal_walls, external_walls, floor, roof, windows, doors)
+plot.day(dfplot, '~/Desktop/plot_teste_min')
 
-plot = ggplot(df) + 
-  geom_line(aes(x = hora, y=doors, colour = "Portas")) + 
-  geom_line(aes(x = hora, y=windows, colour = "Janelas"))+
-  geom_line(aes(x = hora, y=internal_walls, colour = "Paredes Internas"))+
-  geom_line(aes(x = hora, y=external_walls, colour = "Paredes Externas"))+
-  geom_line(aes(x = hora, y=roof, colour = "Cobertura"))+
-  geom_line(aes(x = hora, y=floor, colour = "Piso"))+
-  geom_line(aes(x = hora, y=internal_gains, colour = "Cargas Internas"))+
-  labs(x="Horas nos Dias", y="Calor [Wh]")+
-  theme(axis.text.x=element_text(angle=90, vjust = 0.5, size=9),
-        legend.position = "bottom",
-        axis.title.x = element_text(size=12, vjust = 0.75),
-        axis.title.y = element_text(size=12, vjust = 2),
-        axis.text.y = element_text(size=10),
-        legend.title = element_blank(),
-        legend.text = element_text(size=12, hjust = 0.5),
-        strip.text = element_text(size=13)) +
-  scale_x_datetime(date_breaks='6 hours',date_labels='%H:%M',expand = c(0, 0))
+dfplot = day.to.plot(df, c(4,20))  # 'min')  # 
+dfplot = df.balanco(dfplot, zt, internal_walls, external_walls, floor, roof, windows, doors)
+plot.day(dfplot, '~/Desktop/plot_teste_min')
 
-ggsave('Sao_conduction.png',plot=plot, width = 32, height = 18, units = "cm", dpi = 500)
+dfplot = day.to.plot(df, c(4,20))  # 'min')  # 
+dfplot = df.balanco(dfplot, zt, internal_walls, external_walls, floor, roof, windows, doors)
+plot.day(dfplot, '~/Desktop/plot_teste_min', title = FALSE)
 
-# png(filename = 'Sao_conduction.png', width = 32, height = 18, units = "cm", res = 500)
-# plot(
-  
-# )
-# dev.off()
+plot.period(df = df_balanco, file_name = '~/Desktop/teste2')
